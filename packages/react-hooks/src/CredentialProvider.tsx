@@ -4,6 +4,7 @@ import type {
   CredentialStateChangedEvent,
   CredentialDeletedEvent,
   CredentialRecord,
+  RevocationNotificationReceivedEvent,
 } from '@aries-framework/core'
 
 import { CredentialEventTypes } from '@aries-framework/core'
@@ -62,7 +63,7 @@ const CredentialProvider: React.FC<Props> = ({ agent, children }) => {
 
   useEffect(() => {
     if (!credentialState.loading) {
-      const stateChangedListener = async (event: CredentialStateChangedEvent) => {
+      const stateChangedListener = async (event: CredentialStateChangedEvent | RevocationNotificationReceivedEvent) => {
         const newCredentialsState = [...credentialState.credentials]
         const index = newCredentialsState.findIndex((credential) => credential.id === event.payload.credentialRecord.id)
         if (index > -1) {
@@ -89,10 +90,12 @@ const CredentialProvider: React.FC<Props> = ({ agent, children }) => {
 
       agent?.events.on(CredentialEventTypes.CredentialStateChanged, stateChangedListener)
       agent?.events.on(CredentialEventTypes.CredentialDeleted, deletedListener)
+      agent?.events.on(CredentialEventTypes.RevocationNotificationReceived, stateChangedListener)
 
       return () => {
         agent?.events.off(CredentialEventTypes.CredentialStateChanged, stateChangedListener)
         agent?.events.off(CredentialEventTypes.CredentialDeleted, deletedListener)
+        agent?.events.off(CredentialEventTypes.RevocationNotificationReceived, stateChangedListener)
       }
     }
   }, [credentialState, agent])
